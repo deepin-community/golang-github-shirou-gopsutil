@@ -1,4 +1,12 @@
 #!/usr/bin/make -f
 
+#export DH_VERBOSE = 1
+
+export DH_GOLANG_GO_GENERATE := 1
+
+# Avoid running tests that require root.
+export CI := true
+export CIRCLECI := true
+
 %:
-	dh $@
+	dh $@ --buildsystem=golang --with=golang
