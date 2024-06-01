@@ -1,15 +1,37 @@
-Source: template-repository
-Section: unknown
+Source: golang-github-shirou-gopsutil
+Section: golang
 Priority: optional
-Maintainer: Tsic404 <liuheng@deepin.org>
-Build-Depends: debhelper (>= 11)
-Standards-Version: 4.1.3
-Homepage: https://github.com/deepin-community/template-repository
-#Vcs-Browser: https://salsa.debian.org/debian/deepin-community-template-repository
-#Vcs-Git: https://salsa.debian.org/debian/deepin-community-template-repository.git
+Maintainer: Debian Go Packaging Team <team+pkg-go@tracker.debian.org>
+Uploaders: Martín Ferrari <tincho@debian.org>,
+           Nobuhiro Iwamatsu <iwamatsu@debian.org>,
+           Tim Potter <tpot@hpe.com>,
+           Dmitry Smirnov <onlyjob@debian.org>,
+           Aloïs Micard <creekorful@debian.org>
+Build-Depends: debhelper-compat (= 13),
+               dh-golang,
+               golang-any (>=2:1.16~1~),
+               golang-github-stretchr-testify-dev,
+               golang-github-tklauser-go-sysconf-dev,
+               golang-golang-x-sys-dev (>= 0.0~git20180510~),
+               lsof,
+               procps
+Standards-Version: 4.6.2
+Homepage: https://github.com/shirou/gopsutil
+Vcs-Browser: https://salsa.debian.org/go-team/packages/golang-github-shirou-gopsutil
+Vcs-Git: https://salsa.debian.org/go-team/packages/golang-github-shirou-gopsutil.git
+XS-Go-Import-Path: github.com/shirou/gopsutil
+Rules-Requires-Root: no
+Testsuite: autopkgtest-pkg-go
 
-Package: template-repository
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: <insert up to 60 chars description>
- <insert long description, indented with spaces>
+Package: golang-github-shirou-gopsutil-dev
+Architecture: all
+Multi-Arch: foreign
+Depends: golang-github-stretchr-testify-dev,
+         golang-github-tklauser-go-sysconf-dev,
+         golang-golang-x-sys-dev (>= 0.0~git20180510~),
+         ${misc:Depends}
+Description: Go package implementing psutils
+ The gopsutil package provides a library which psutil
+ (http://pythonhosted.org/psutil/) functions. Most of the features are
+ implemented. Please refer to web site of the project about implementation
+ list.
