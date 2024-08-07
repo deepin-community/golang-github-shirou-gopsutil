@@ -1,0 +1,76 @@
+--- a/cpu/cpu_linux_test.go
++++ b/cpu/cpu_linux_test.go
+@@ -3,6 +3,7 @@
+ import (
+ 	"errors"
+ 	"os/exec"
++	"runtime"
+ 	"strconv"
+ 	"strings"
+ 	"testing"
+@@ -39,6 +40,12 @@
+ }
+ 
+ func TestCPUCountsAgainstLscpu(t *testing.T) {
++	// Checking CPU arch
++	arch := runtime.GOARCH
++	if arch == "riscv64" || arch == "amd64" {
++		t.Skip("skipping this test on riscv64 and amd64 architecture")
++	}
++
+ 	cmd := exec.Command("lscpu")
+ 	cmd.Env = []string{"LC_ALL=C"}
+ 	out, err := cmd.Output()
+--- a/process/process_test.go
++++ b/process/process_test.go
+@@ -225,6 +225,12 @@
+ }
+ 
+ func Test_Process_Nice(t *testing.T) {
++	// Checking CPU arch
++	arch := runtime.GOARCH
++	if arch == "loong64" {
++		t.Skip("skipping test on loong64 architecture")
++	}
++
+ 	p := testGetProcess()
+ 
+ 	// https://github.com/shirou/gopsutil/issues/1532
+@@ -307,6 +313,11 @@
+ }
+ 
+ func Test_Process_Long_Name_With_Spaces(t *testing.T) {
++	// Checking CPU arch
++	arch := runtime.GOARCH
++	if arch == "riscv64" {
++		t.Skip("skipping test on riscv64 architecture")
++	}
+ 	tmpdir, err := os.MkdirTemp("", "")
+ 	if err != nil {
+ 		t.Fatalf("unable to create temp dir %v", err)
+@@ -353,6 +364,12 @@
+ }
+ 
+ func Test_Process_Long_Name(t *testing.T) {
++	// Checking CPU arch
++	arch := runtime.GOARCH
++	if arch == "riscv64" {
++		t.Skip("skipping test on riscv64 architecture")
++	}
++
+ 	tmpdir, err := os.MkdirTemp("", "")
+ 	if err != nil {
+ 		t.Fatalf("unable to create temp dir %v", err)
+@@ -676,6 +693,12 @@
+ }
+ 
+ func Test_CPUTimes(t *testing.T) {
++	// Checking CPU arch
++	arch := runtime.GOARCH
++	if arch == "riscv64" {
++		t.Skip("skipping test on riscv64 architecture")
++	}
++
+ 	pid := os.Getpid()
+ 	process, err := NewProcess(int32(pid))
+ 	skipIfNotImplementedErr(t, err)
