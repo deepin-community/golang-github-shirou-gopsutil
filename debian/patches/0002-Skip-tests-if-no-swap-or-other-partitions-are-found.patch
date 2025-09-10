@@ -1,0 +1,48 @@
+From: Guillem Jover <gjover@sipwise.com>
+Date: Mon, 7 Oct 2024 16:03:28 +0200
+Subject: Skip tests if no swap or other partitions are found
+
+On some CI systems, or VM environments there might be no apparent swap
+or partitions visible. Do not fail the tests in these cases.
+
+Origin: vendor, Sipwise
+Bug: https://github.com/shirou/gopsutil/issues/1654
+Forwarded: no
+---
+ disk/disk_test.go | 4 ++--
+ mem/mem_test.go   | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/disk/disk_test.go b/disk/disk_test.go
+index e282703..d425799 100644
+--- a/disk/disk_test.go
++++ b/disk/disk_test.go
+@@ -35,13 +35,13 @@ func TestUsage(t *testing.T) {
+ func TestPartitions(t *testing.T) {
+ 	ret, err := Partitions(false)
+ 	skipIfNotImplementedErr(t, err)
+-	if err != nil || len(ret) == 0 {
++	if err != nil {
+ 		t.Errorf("error %v", err)
+ 	}
+ 	t.Log(ret)
+ 
+ 	if len(ret) == 0 {
+-		t.Errorf("ret is empty")
++		t.Skip("no paritions found")
+ 	}
+ 	for _, disk := range ret {
+ 		if disk.Device == "" {
+diff --git a/mem/mem_test.go b/mem/mem_test.go
+index c069a4a..513dae4 100644
+--- a/mem/mem_test.go
++++ b/mem/mem_test.go
+@@ -125,7 +125,7 @@ func TestSwapDevices(t *testing.T) {
+ 	t.Logf("SwapDevices() -> %+v", v)
+ 
+ 	if len(v) == 0 {
+-		t.Fatalf("no swap devices found. [this is expected if the host has swap disabled]")
++		t.Skip("no swap devices found. [this is expected if the host has swap disabled]")
+ 	}
+ 
+ 	for _, device := range v {

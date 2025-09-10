@@ -6,7 +6,11 @@ export DH_GOLANG_GO_GENERATE := 1
 
 # Avoid running tests that require root.
 export CI := true
-export CIRCLECI := true
 
 %:
-	dh $@ --buildsystem=golang --with=golang
+	dh $@ --buildsystem=golang --builddirectory=_build
+
+execute_before_dh_auto_test:
+	# Gather information from CI, VM and build environments to be able to
+	# update the code.
+	-cat /proc/cpuinfo

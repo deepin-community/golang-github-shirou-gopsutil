@@ -1,5 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause
 //go:build linux
-// +build linux
 
 package mem
 
@@ -11,10 +11,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestVirtualMemoryEx(t *testing.T) {
-	v, err := VirtualMemoryEx()
+func TestExVirtualMemory(t *testing.T) {
+	ex := NewExLinux()
+
+	v, err := ex.VirtualMemory()
 	if err != nil {
 		t.Error(err)
 	}
@@ -148,21 +151,20 @@ const invalidFile = `INVALID				Type		Size		Used		Priority
 `
 
 func TestParseSwapsFile_ValidFile(t *testing.T) {
-	assert := assert.New(t)
 	stats, err := parseSwapsFile(context.Background(), strings.NewReader(validFile))
-	assert.NoError(err)
+	require.NoError(t, err)
 
-	assert.Equal(*stats[0], SwapDevice{
+	assert.Equal(t, SwapDevice{
 		Name:      "/dev/dm-2",
 		UsedBytes: 502566912,
 		FreeBytes: 68128825344,
-	})
+	}, *stats[0])
 
-	assert.Equal(*stats[1], SwapDevice{
+	assert.Equal(t, SwapDevice{
 		Name:      "/swapfile",
 		UsedBytes: 1024,
 		FreeBytes: 1024,
-	})
+	}, *stats[1])
 }
 
 func TestParseSwapsFile_InvalidFile(t *testing.T) {

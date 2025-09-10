@@ -1,0 +1,27 @@
+From: Guillem Jover <gjover@sipwise.com>
+Date: Mon, 7 Oct 2024 15:45:35 +0200
+Subject: Skip test if /run/utmp is missing
+
+On some Linux systems this file is no longer present, and it is replaced by
+alternative interfaces such as systemd's logind.
+
+Origin: vendor, Sipwise
+Forwarded: no
+---
+ host/host_test.go | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/host/host_test.go b/host/host_test.go
+index 24b1371..341dc55 100644
+--- a/host/host_test.go
++++ b/host/host_test.go
+@@ -91,6 +91,9 @@ func TestBootTime(t *testing.T) {
+ func TestUsers(t *testing.T) {
+ 	v, err := Users()
+ 	skipIfNotImplementedErr(t, err)
++	if errors.Is(err, os.ErrNotExist) {
++		t.Skip("Users file missing")
++	}
+ 	if err != nil {
+ 		t.Errorf("error %v", err)
+ 	}

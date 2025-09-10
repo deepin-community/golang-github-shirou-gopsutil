@@ -1,5 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause
 //go:build openbsd
-// +build openbsd
 
 package disk
 
@@ -8,8 +8,9 @@ import (
 	"context"
 	"encoding/binary"
 
-	"github.com/shirou/gopsutil/v3/internal/common"
 	"golang.org/x/sys/unix"
+
+	"github.com/shirou/gopsutil/v4/internal/common"
 )
 
 func PartitionsWithContext(ctx context.Context, all bool) ([]PartitionStat, error) {

@@ -1,5 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause
 //go:build linux || freebsd || openbsd || darwin || solaris
-// +build linux freebsd openbsd darwin solaris
 
 package process
 
@@ -16,7 +16,7 @@ import (
 
 	"golang.org/x/sys/unix"
 
-	"github.com/shirou/gopsutil/v3/internal/common"
+	"github.com/shirou/gopsutil/v4/internal/common"
 )
 
 type Signal = syscall.Signal
@@ -108,6 +108,7 @@ func PidExistsWithContext(ctx context.Context, pid int32) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	defer proc.Release()
 
 	if isMount(common.HostProcWithContext(ctx)) { // if /<HOST_PROC>/proc exists and is mounted, check if /<HOST_PROC>/proc/<PID> folder exists
 		_, err := os.Stat(common.HostProcWithContext(ctx, strconv.Itoa(int(pid))))
@@ -144,6 +145,7 @@ func (p *Process) SendSignalWithContext(ctx context.Context, sig syscall.Signal)
 	if err != nil {
 		return err
 	}
+	defer process.Release()
 
 	err = process.Signal(sig)
 	if err != nil {

@@ -1,5 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause
 //go:build netbsd
-// +build netbsd
 
 package cpu
 
@@ -9,9 +9,10 @@ import (
 	"runtime"
 	"unsafe"
 
-	"github.com/shirou/gopsutil/v3/internal/common"
 	"github.com/tklauser/go-sysconf"
 	"golang.org/x/sys/unix"
+
+	"github.com/shirou/gopsutil/v4/internal/common"
 )
 
 const (
@@ -56,7 +57,7 @@ func TimesWithContext(ctx context.Context, percpu bool) (ret []TimesStat, err er
 
 	ncpu, err := unix.SysctlUint32("hw.ncpu")
 	if err != nil {
-		return
+		return //nolint:nakedret //FIXME
 	}
 
 	var i uint32
