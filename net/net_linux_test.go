@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSD-3-Clause
 package net
 
 import (
@@ -10,8 +11,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
-	"github.com/shirou/gopsutil/v3/internal/common"
+	"github.com/shirou/gopsutil/v4/internal/common"
 )
 
 func TestIOCountersByFileParsing(t *testing.T) {
@@ -19,7 +21,7 @@ func TestIOCountersByFileParsing(t *testing.T) {
 	tmpfile, err := os.CreateTemp("", "proc_dev_net")
 	defer os.Remove(tmpfile.Name()) // clean up
 
-	assert.Nil(t, err, "Temporary file creation failed: ", err)
+	require.NoError(t, err, "Temporary file creation failed: ", err)
 
 	cases := [4][2]string{
 		{"eth0:   ", "eth1:   "},
@@ -29,7 +31,7 @@ func TestIOCountersByFileParsing(t *testing.T) {
 	}
 	for _, testCase := range cases {
 		err = tmpfile.Truncate(0)
-		assert.Nil(t, err, "Temporary file truncating problem: ", err)
+		require.NoError(t, err, "Temporary file truncating problem: ", err)
 
 		// Parse interface name for assertion
 		interface0 := strings.TrimSpace(testCase[0])
@@ -43,44 +45,44 @@ func TestIOCountersByFileParsing(t *testing.T) {
 
 		// Write /proc/net/dev sample output
 		_, err = tmpfile.Write(proc)
-		assert.Nil(t, err, "Temporary file writing failed: ", err)
+		require.NoError(t, err, "Temporary file writing failed: ", err)
 
 		counters, err := IOCountersByFile(true, tmpfile.Name())
 
-		assert.Nil(t, err)
+		require.NoError(t, err)
 		assert.NotEmpty(t, counters)
-		assert.Equal(t, 2, len(counters))
+		assert.Len(t, counters, 2)
 		assert.Equal(t, interface0, counters[0].Name)
-		assert.Equal(t, 1, int(counters[0].BytesRecv))
-		assert.Equal(t, 2, int(counters[0].PacketsRecv))
-		assert.Equal(t, 3, int(counters[0].Errin))
-		assert.Equal(t, 4, int(counters[0].Dropin))
-		assert.Equal(t, 5, int(counters[0].Fifoin))
-		assert.Equal(t, 9, int(counters[0].BytesSent))
-		assert.Equal(t, 10, int(counters[0].PacketsSent))
-		assert.Equal(t, 11, int(counters[0].Errout))
-		assert.Equal(t, 12, int(counters[0].Dropout))
-		assert.Equal(t, 13, int(counters[0].Fifoout))
+		assert.Equal(t, uint64(1), counters[0].BytesRecv)
+		assert.Equal(t, uint64(2), counters[0].PacketsRecv)
+		assert.Equal(t, uint64(3), counters[0].Errin)
+		assert.Equal(t, uint64(4), counters[0].Dropin)
+		assert.Equal(t, uint64(5), counters[0].Fifoin)
+		assert.Equal(t, uint64(9), counters[0].BytesSent)
+		assert.Equal(t, uint64(10), counters[0].PacketsSent)
+		assert.Equal(t, uint64(11), counters[0].Errout)
+		assert.Equal(t, uint64(12), counters[0].Dropout)
+		assert.Equal(t, uint64(13), counters[0].Fifoout)
 		assert.Equal(t, interface1, counters[1].Name)
-		assert.Equal(t, 100, int(counters[1].BytesRecv))
-		assert.Equal(t, 200, int(counters[1].PacketsRecv))
-		assert.Equal(t, 300, int(counters[1].Errin))
-		assert.Equal(t, 400, int(counters[1].Dropin))
-		assert.Equal(t, 500, int(counters[1].Fifoin))
-		assert.Equal(t, 900, int(counters[1].BytesSent))
-		assert.Equal(t, 1000, int(counters[1].PacketsSent))
-		assert.Equal(t, 1100, int(counters[1].Errout))
-		assert.Equal(t, 1200, int(counters[1].Dropout))
-		assert.Equal(t, 1300, int(counters[1].Fifoout))
+		assert.Equal(t, uint64(100), counters[1].BytesRecv)
+		assert.Equal(t, uint64(200), counters[1].PacketsRecv)
+		assert.Equal(t, uint64(300), counters[1].Errin)
+		assert.Equal(t, uint64(400), counters[1].Dropin)
+		assert.Equal(t, uint64(500), counters[1].Fifoin)
+		assert.Equal(t, uint64(900), counters[1].BytesSent)
+		assert.Equal(t, uint64(1000), counters[1].PacketsSent)
+		assert.Equal(t, uint64(1100), counters[1].Errout)
+		assert.Equal(t, uint64(1200), counters[1].Dropout)
+		assert.Equal(t, uint64(1300), counters[1].Fifoout)
 	}
 
 	err = tmpfile.Close()
-	assert.Nil(t, err, "Temporary file closing failed: ", err)
+	assert.NoError(t, err, "Temporary file closing failed: ", err)
 }
 
 func TestGetProcInodesAll(t *testing.T) {
 	waitForServer := make(chan bool)
-	go func() { // TCP listening goroutine to have some opened inodes even in CI
+	go func(t *testing.T) { // TCP listening goroutine to have some opened inodes even in CI
 		addr, err := net.ResolveTCPAddr("tcp", "localhost:0") // dynamically get a random open port from OS
 		if err != nil {
 			t.Skipf("unable to resolve localhost: %v", err)
@@ -98,12 +100,13 @@ func TestGetProcInodesAll(t *testing.T) {
 			}
 			defer conn.Close()
 		}
-	}()
+	}(t)
 	<-waitForServer
 
-	root := common.HostProcWithContext(context.Background(), "")
-	v, err := getProcInodesAll(root, 0)
-	assert.Nil(t, err)
+	ctx := context.Background()
+	root := common.HostProcWithContext(ctx, "")
+	v, err := getProcInodesAllWithContext(ctx, root, 0)
+	require.NoError(t, err)
 	assert.NotEmpty(t, v)
 }
 
@@ -112,9 +115,9 @@ func TestConnectionsMax(t *testing.T) {
 		t.Skip("Skip CI")
 	}
 
-	max := 10
-	v, err := ConnectionsMax("tcp", max)
-	assert.Nil(t, err)
+	maxConn := 10
+	v, err := ConnectionsMax("tcp", maxConn)
+	require.NoError(t, err)
 	assert.NotEmpty(t, v)
 
 	cxByPid := map[int32]int{}
@@ -124,7 +127,7 @@ func TestConnectionsMax(t *testing.T) {
 		}
 	}
 	for _, c := range cxByPid {
-		assert.True(t, c <= max)
+		assert.LessOrEqual(t, c, maxConn)
 	}
 }
 
@@ -135,8 +138,6 @@ type AddrTest struct {
 }
 
 func TestDecodeAddress(t *testing.T) {
-	assert := assert.New(t)
-
 	addr := map[string]AddrTest{
 		"11111:0035": {
 			Error: true,
@@ -179,11 +180,11 @@ func TestDecodeAddress(t *testing.T) {
 		}
 		addr, err := decodeAddress(uint32(family), src)
 		if dst.Error {
-			assert.NotNil(err, src)
+			assert.Error(t, err, src)
 		} else {
-			assert.Nil(err, src)
-			assert.Equal(dst.IP, addr.IP, src)
-			assert.Equal(dst.Port, int(addr.Port), src)
+			require.NoError(t, err, src)
+			assert.Equal(t, dst.IP, addr.IP, src)
+			assert.Equal(t, dst.Port, int(addr.Port), src)
 		}
 	}
 }
@@ -196,7 +197,7 @@ func TestReverse(t *testing.T) {
 func TestConntrackStatFileParsing(t *testing.T) {
 	tmpfile, err := os.CreateTemp("", "proc_net_stat_conntrack")
 	defer os.Remove(tmpfile.Name())
-	assert.Nil(t, err, "Temporary file creation failed: ", err)
+	require.NoError(t, err, "Temporary file creation failed: ", err)
 
 	data := []byte(`
 entries  searched found new invalid ignore delete deleteList insert insertFailed drop earlyDrop icmpError  expectNew expectCreate expectDelete searchRestart
@@ -245,12 +246,12 @@ entries  searched found new invalid ignore delete deleteList insert insertFailed
 
 	// Write data to tempfile
 	_, err = tmpfile.Write(data)
-	assert.Nil(t, err, "Temporary file writing failed: ", err)
+	require.NoError(t, err, "Temporary file writing failed: ", err)
 
 	// Function under test
 	stats, err := conntrackStatsFromFile(tmpfile.Name(), true)
-	assert.Nil(t, err)
-	assert.Equal(t, 8, len(stats), "Expected 8 results")
+	require.NoError(t, err)
+	assert.Len(t, stats, 8, "Expected 8 results")
 
 	summary := &ConntrackStat{}
 	for i, exp := range slist.Items() {
@@ -310,7 +311,7 @@ entries  searched found new invalid ignore delete deleteList insert insertFailed
 
 	// Test summary grouping
 	totals, err := conntrackStatsFromFile(tmpfile.Name(), false)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	for i, st := range totals {
 		assert.Equal(t, summary.Entries, st.Entries)
 		assert.Equal(t, summary.Searched, st.Searched)

@@ -1,5 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause
 //go:build linux
-// +build linux
 
 package process
 
@@ -12,9 +12,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func Test_Process_splitProcStat(t *testing.T) {
+func TestSplitProcStat(t *testing.T) {
 	expectedFieldsNum := 53
 	statLineContent := make([]string, expectedFieldsNum-1)
 	for i := 0; i < expectedFieldsNum-1; i++ {
@@ -40,7 +41,7 @@ func Test_Process_splitProcStat(t *testing.T) {
 	for _, expectedName := range cases {
 		statLineContent[commandNameIndex-1] = "(" + expectedName + ")"
 		statLine := strings.Join(statLineContent, " ")
-		t.Run(fmt.Sprintf("name: %s", expectedName), func(t *testing.T) {
+		t.Run("name: "+expectedName, func(t *testing.T) {
 			parsedStatLine := splitProcStat([]byte(statLine))
 			assert.Equal(t, expectedName, parsedStatLine[commandNameIndex])
 			for _, idx := range consideredFields {
@@ -56,7 +57,7 @@ func Test_Process_splitProcStat(t *testing.T) {
 	}
 }
 
-func Test_Process_splitProcStat_fromFile(t *testing.T) {
+func TestSplitProcStat_fromFile(t *testing.T) {
 	pids, err := os.ReadDir("testdata/linux/")
 	if err != nil {
 		t.Error(err)
@@ -72,27 +73,27 @@ func Test_Process_splitProcStat_fromFile(t *testing.T) {
 			continue
 		}
 		contents, err := os.ReadFile(statFile)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		pidStr := strconv.Itoa(int(pid))
 
 		ppid := "68044" // TODO: how to pass ppid to test?
 
 		fields := splitProcStat(contents)
-		assert.Equal(t, fields[1], pidStr)
-		assert.Equal(t, fields[2], "test(cmd).sh")
-		assert.Equal(t, fields[3], "S")
-		assert.Equal(t, fields[4], ppid)
-		assert.Equal(t, fields[5], pidStr) // pgrp
-		assert.Equal(t, fields[6], ppid)   // session
-		assert.Equal(t, fields[8], pidStr) // tpgrp
-		assert.Equal(t, fields[18], "20")  // priority
-		assert.Equal(t, fields[20], "1")   // num threads
-		assert.Equal(t, fields[52], "0")   // exit code
+		assert.Equal(t, pidStr, fields[1])
+		assert.Equal(t, "test(cmd).sh", fields[2])
+		assert.Equal(t, "S", fields[3])
+		assert.Equal(t, ppid, fields[4])
+		assert.Equal(t, pidStr, fields[5]) // pgrp
+		assert.Equal(t, ppid, fields[6])   // session
+		assert.Equal(t, pidStr, fields[8]) // tpgrp
+		assert.Equal(t, "20", fields[18])  // priority
+		assert.Equal(t, "1", fields[20])   // num threads
+		assert.Equal(t, "0", fields[52])   // exit code
 	}
 }
 
-func Test_fillFromCommWithContext(t *testing.T) {
+func TestFillFromCommWithContext(t *testing.T) {
 	pids, err := os.ReadDir("testdata/linux/")
 	if err != nil {
 		t.Error(err)
@@ -113,7 +114,7 @@ func Test_fillFromCommWithContext(t *testing.T) {
 	}
 }
 
-func Test_fillFromStatusWithContext(t *testing.T) {
+func TestFillFromStatusWithContext(t *testing.T) {
 	pids, err := os.ReadDir("testdata/linux/")
 	if err != nil {
 		t.Error(err)
@@ -152,7 +153,7 @@ func Benchmark_fillFromStatusWithContext(b *testing.B) {
 	}
 }
 
-func Test_fillFromTIDStatWithContext_lx_brandz(t *testing.T) {
+func TestFillFromTIDStatWithContext_lx_brandz(t *testing.T) {
 	pids, err := os.ReadDir("testdata/lx_brandz/")
 	if err != nil {
 		t.Error(err)
@@ -171,6 +172,72 @@ func Test_fillFromTIDStatWithContext_lx_brandz(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		assert.Equal(t, float64(0), cpuTimes.Iowait)
+		assert.Zero(t, cpuTimes.Iowait)
 	}
+}
+
+func TestProcessMemoryMaps(t *testing.T) {
+	t.Setenv("HOST_PROC", "testdata/linux")
+	pid := 1
+	p, err := NewProcess(int32(pid))
+	require.NoError(t, err)
+	maps, err := p.MemoryMaps(false)
+	require.NoError(t, err)
+
+	expected := &[]MemoryMapsStat{
+		{
+			"[vvar]",
+			0,
+			1,
+			0,
+			3,
+			4,
+			5,
+			6,
+			7,
+			8,
+			9,
+		},
+		{
+			"",
+			0,
+			1,
+			2,
+			3,
+			4,
+			0,
+			6,
+			7,
+			8,
+			9,
+		},
+		{
+			"[vdso]",
+			0,
+			1,
+			2,
+			3,
+			4,
+			5,
+			0,
+			7,
+			8,
+			9,
+		},
+		{
+			"/usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1",
+			0,
+			1,
+			2,
+			3,
+			4,
+			5,
+			6,
+			7,
+			0,
+			9,
+		},
+	}
+
+	require.Equal(t, expected, maps)
 }

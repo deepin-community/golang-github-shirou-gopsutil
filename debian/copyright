@@ -1,17 +1,22 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: gopsutil
 Source: https://github.com/shirou/gopsutil
+Upstream-Name: gopsutil
 
-Files: *
-Copyright: 2014  WAKAYAMA Shirou
+Files:
+ *
+Copyright:
+ 2009 The Go Authors. All rights reserved.
+ 2010 Ed Schouten <ed@FreeBSD.org>
+ 2014 WAKAYAMA Shirou
+ 2016-2018 "freedom" Koan-Sin Tan
+ 2017 kadota kyohei
 License: BSD-3-clause
 
-Files: debian/*
-Copyright: 2016 Nobuhiro Iwamatsu <iwamatsu@debian.org>
-License: BSD-3-clause
-
-Files: internal/common/binary.go
-Copyright: 2009 The Go Authors
+Files:
+ debian/*
+Copyright:
+ 2016 Nobuhiro Iwamatsu <iwamatsu@debian.org>
+ 2024-2025 Sipwise GmbH, Austria
 License: BSD-3-clause
 
 License: BSD-3-clause

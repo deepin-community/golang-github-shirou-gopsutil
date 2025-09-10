@@ -1,18 +1,20 @@
+// SPDX-License-Identifier: BSD-3-Clause
+//go:build solaris
+
 package host
 
 import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/csv"
+	"errors"
 	"fmt"
-	"io"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/shirou/gopsutil/v3/internal/common"
+	"github.com/shirou/gopsutil/v4/internal/common"
 )
 
 func HostIDWithContext(ctx context.Context) (string, error) {
@@ -30,13 +32,12 @@ func HostIDWithContext(ctx context.Context) (string, error) {
 				line := sc.Text()
 
 				// If we're in the global zone, rely on the hostname.
-				if line == "global" {
-					hostname, err := os.Hostname()
-					if err == nil {
-						return hostname, nil
-					}
-				} else {
+				if line != "global" {
 					return strings.TrimSpace(line), nil
+				}
+				hostname, err := os.Hostname()
+				if err == nil {
+					return hostname, nil
 				}
 			}
 		}
@@ -83,7 +84,7 @@ func BootTimeWithContext(ctx context.Context) (uint64, error) {
 }
 
 func UptimeWithContext(ctx context.Context) (uint64, error) {
-	bootTime, err := BootTime()
+	bootTime, err := BootTime() //nolint:contextcheck //FIXME
 	if err != nil {
 		return 0, err
 	}
@@ -92,43 +93,6 @@ func UptimeWithContext(ctx context.Context) (uint64, error) {
 
 func UsersWithContext(ctx context.Context) ([]UserStat, error) {
 	return []UserStat{}, common.ErrNotImplementedError
-}
-
-func SensorsTemperaturesWithContext(ctx context.Context) ([]TemperatureStat, error) {
-	var ret []TemperatureStat
-
-	out, err := invoke.CommandWithContext(ctx, "ipmitool", "-c", "sdr", "list")
-	if err != nil {
-		return ret, err
-	}
-
-	r := csv.NewReader(strings.NewReader(string(out)))
-	// Output may contain errors, e.g. "bmc_send_cmd: Permission denied", don't expect a consistent number of records
-	r.FieldsPerRecord = -1
-	for {
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return ret, err
-		}
-		// CPU1 Temp,40,degrees C,ok
-		if len(record) < 3 || record[1] == "" || record[2] != "degrees C" {
-			continue
-		}
-		v, err := strconv.ParseFloat(record[1], 64)
-		if err != nil {
-			return ret, err
-		}
-		ts := TemperatureStat{
-			SensorKey:   strings.TrimSuffix(record[0], " Temp"),
-			Temperature: v,
-		}
-		ret = append(ret, ts)
-	}
-
-	return ret, nil
 }
 
 func VirtualizationWithContext(ctx context.Context) (string, string, error) {
@@ -175,7 +139,7 @@ func parseUnameOutput(ctx context.Context) (string, string, string, error) {
 
 	fields := strings.Fields(string(out))
 	if len(fields) < 3 {
-		return "", "", "", fmt.Errorf("malformed `uname` output")
+		return "", "", "", errors.New("malformed `uname` output")
 	}
 
 	return fields[0], fields[1], fields[2], nil

@@ -1,18 +1,19 @@
+// SPDX-License-Identifier: BSD-3-Clause
 //go:build windows
-// +build windows
 
 package disk
 
 import (
 	"bytes"
 	"context"
-	"fmt"
+	"errors"
 	"syscall"
 	"unsafe"
 
-	"github.com/shirou/gopsutil/v3/internal/common"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
+
+	"github.com/shirou/gopsutil/v4/internal/common"
 )
 
 var (
@@ -133,7 +134,7 @@ func PartitionsWithContext(ctx context.Context, all bool) ([]PartitionStat, erro
 						uintptr(unsafe.Pointer(&lpFileSystemNameBuffer[0])),
 						uintptr(len(lpFileSystemNameBuffer)))
 					if driveret == 0 {
-						if typeret == 5 || typeret == 2 {
+						if typeret == 2 || typeret == 4 || typeret == 5 {
 							continue // device is not ready will happen if there is no disk in the drive
 						}
 						warnings.Add(err)
@@ -202,11 +203,11 @@ func IOCountersWithContext(ctx context.Context, names ...string) (map[string]IOC
 			if typeret != windows.DRIVE_FIXED {
 				continue
 			}
-			szDevice := fmt.Sprintf(`\\.\%s`, path)
+			szDevice := `\\.\` + path
 			const IOCTL_DISK_PERFORMANCE = 0x70020
 			h, err := windows.CreateFile(syscall.StringToUTF16Ptr(szDevice), 0, windows.FILE_SHARE_READ|windows.FILE_SHARE_WRITE, nil, windows.OPEN_EXISTING, 0, 0)
 			if err != nil {
-				if err == windows.ERROR_FILE_NOT_FOUND {
+				if errors.Is(err, windows.ERROR_FILE_NOT_FOUND) {
 					continue
 				}
 				return drivemap, err
@@ -218,14 +219,17 @@ func IOCountersWithContext(ctx context.Context, names ...string) (map[string]IOC
 			if err != nil {
 				return drivemap, err
 			}
-			drivemap[path] = IOCountersStat{
-				ReadBytes:  uint64(diskPerformance.BytesRead),
-				WriteBytes: uint64(diskPerformance.BytesWritten),
-				ReadCount:  uint64(diskPerformance.ReadCount),
-				WriteCount: uint64(diskPerformance.WriteCount),
-				ReadTime:   uint64(diskPerformance.ReadTime / 10000 / 1000), // convert to ms: https://github.com/giampaolo/psutil/issues/1012
-				WriteTime:  uint64(diskPerformance.WriteTime / 10000 / 1000),
-				Name:       path,
+
+			if len(names) == 0 || common.StringsHas(names, path) {
+				drivemap[path] = IOCountersStat{
+					ReadBytes:  uint64(diskPerformance.BytesRead),
+					WriteBytes: uint64(diskPerformance.BytesWritten),
+					ReadCount:  uint64(diskPerformance.ReadCount),
+					WriteCount: uint64(diskPerformance.WriteCount),
+					ReadTime:   uint64(diskPerformance.ReadTime / 10000 / 1000), // convert to ms: https://github.com/giampaolo/psutil/issues/1012
+					WriteTime:  uint64(diskPerformance.WriteTime / 10000 / 1000),
+					Name:       path,
+				}
 			}
 		}
 	}

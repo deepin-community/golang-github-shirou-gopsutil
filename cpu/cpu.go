@@ -1,8 +1,10 @@
+// SPDX-License-Identifier: BSD-3-Clause
 package cpu
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"runtime"
@@ -11,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/shirou/gopsutil/v3/internal/common"
+	"github.com/shirou/gopsutil/v4/internal/common"
 )
 
 // TimesStat contains the amounts of time the CPU has spent performing different
@@ -194,7 +196,7 @@ func percentUsedFromLastCallWithContext(ctx context.Context, percpu bool) ([]flo
 	}
 
 	if lastTimes == nil {
-		return nil, fmt.Errorf("error getting times for cpu percent. lastTimes was nil")
+		return nil, errors.New("error getting times for cpu percent. lastTimes was nil")
 	}
 	return calculateAllBusy(lastTimes, cpuTimes)
 }

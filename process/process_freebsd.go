@@ -1,19 +1,23 @@
+// SPDX-License-Identifier: BSD-3-Clause
 //go:build freebsd
-// +build freebsd
 
 package process
 
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
+	"errors"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
-	cpu "github.com/shirou/gopsutil/v3/cpu"
-	"github.com/shirou/gopsutil/v3/internal/common"
-	net "github.com/shirou/gopsutil/v3/net"
 	"golang.org/x/sys/unix"
+
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/internal/common"
+	"github.com/shirou/gopsutil/v4/net"
 )
 
 func pidsWithContext(ctx context.Context) ([]int32, error) {
@@ -63,7 +67,24 @@ func (p *Process) NameWithContext(ctx context.Context) (string, error) {
 }
 
 func (p *Process) CwdWithContext(ctx context.Context) (string, error) {
-	return "", common.ErrNotImplementedError
+	mib := []int32{CTLKern, KernProc, KernProcCwd, p.Pid}
+	buf, length, err := common.CallSyscall(mib)
+	if err != nil {
+		return "", err
+	}
+
+	if length != sizeOfKinfoFile {
+		return "", errors.New("unexpected size of KinfoFile")
+	}
+
+	var k kinfoFile
+	br := bytes.NewReader(buf)
+	if err := common.Read(br, binary.LittleEndian, &k); err != nil {
+		return "", err
+	}
+	cwd := common.IntToString(k.Path[:])
+
+	return cwd, nil
 }
 
 func (p *Process) ExeWithContext(ctx context.Context) (string, error) {
@@ -83,10 +104,7 @@ func (p *Process) CmdlineWithContext(ctx context.Context) (string, error) {
 		return "", err
 	}
 	ret := strings.FieldsFunc(string(buf), func(r rune) bool {
-		if r == '\u0000' {
-			return true
-		}
-		return false
+		return r == '\u0000'
 	})
 
 	return strings.Join(ret, " "), nil
@@ -157,40 +175,40 @@ func (p *Process) ForegroundWithContext(ctx context.Context) (bool, error) {
 	return strings.IndexByte(string(out), '+') != -1, nil
 }
 
-func (p *Process) UidsWithContext(ctx context.Context) ([]int32, error) {
+func (p *Process) UidsWithContext(ctx context.Context) ([]uint32, error) {
 	k, err := p.getKProc()
 	if err != nil {
 		return nil, err
 	}
 
-	uids := make([]int32, 0, 3)
+	uids := make([]uint32, 0, 3)
 
-	uids = append(uids, int32(k.Ruid), int32(k.Uid), int32(k.Svuid))
+	uids = append(uids, uint32(k.Ruid), uint32(k.Uid), uint32(k.Svuid))
 
 	return uids, nil
 }
 
-func (p *Process) GidsWithContext(ctx context.Context) ([]int32, error) {
+func (p *Process) GidsWithContext(ctx context.Context) ([]uint32, error) {
 	k, err := p.getKProc()
 	if err != nil {
 		return nil, err
 	}
 
-	gids := make([]int32, 0, 3)
-	gids = append(gids, int32(k.Rgid), int32(k.Ngroups), int32(k.Svgid))
+	gids := make([]uint32, 0, 3)
+	gids = append(gids, uint32(k.Rgid), uint32(k.Ngroups), uint32(k.Svgid))
 
 	return gids, nil
 }
 
-func (p *Process) GroupsWithContext(ctx context.Context) ([]int32, error) {
+func (p *Process) GroupsWithContext(ctx context.Context) ([]uint32, error) {
 	k, err := p.getKProc()
 	if err != nil {
 		return nil, err
 	}
 
-	groups := make([]int32, k.Ngroups)
+	groups := make([]uint32, k.Ngroups)
 	for i := int16(0); i < k.Ngroups; i++ {
-		groups[i] = int32(k.Groups[i])
+		groups[i] = uint32(k.Groups[i])
 	}
 
 	return groups, nil
@@ -270,18 +288,21 @@ func (p *Process) MemoryInfoWithContext(ctx context.Context) (*MemoryInfoStat, e
 }
 
 func (p *Process) ChildrenWithContext(ctx context.Context) ([]*Process, error) {
-	pids, err := common.CallPgrepWithContext(ctx, invoke, p.Pid)
+	procs, err := ProcessesWithContext(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil
 	}
-	ret := make([]*Process, 0, len(pids))
-	for _, pid := range pids {
-		np, err := NewProcessWithContext(ctx, pid)
+	ret := make([]*Process, 0, len(procs))
+	for _, proc := range procs {
+		ppid, err := proc.PpidWithContext(ctx)
 		if err != nil {
-			return nil, err
+			continue
 		}
-		ret = append(ret, np)
+		if ppid == p.Pid {
+			ret = append(ret, proc)
+		}
 	}
+	sort.Slice(ret, func(i, j int) bool { return ret[i].Pid < ret[j].Pid })
 	return ret, nil
 }
 
@@ -289,8 +310,8 @@ func (p *Process) ConnectionsWithContext(ctx context.Context) ([]net.ConnectionS
 	return net.ConnectionsPidWithContext(ctx, "all", p.Pid)
 }
 
-func (p *Process) ConnectionsMaxWithContext(ctx context.Context, max int) ([]net.ConnectionStat, error) {
-	return net.ConnectionsPidMaxWithContext(ctx, "all", p.Pid, max)
+func (p *Process) ConnectionsMaxWithContext(ctx context.Context, maxConn int) ([]net.ConnectionStat, error) {
+	return net.ConnectionsPidMaxWithContext(ctx, "all", p.Pid, maxConn)
 }
 
 func ProcessesWithContext(ctx context.Context) ([]*Process, error) {
@@ -331,7 +352,7 @@ func (p *Process) getKProc() (*KinfoProc, error) {
 		return nil, err
 	}
 	if length != sizeOfKinfoProc {
-		return nil, err
+		return nil, errors.New("unexpected size of KinfoProc")
 	}
 
 	k, err := parseKinfoProc(buf)

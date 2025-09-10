@@ -1,3 +1,64 @@
+golang-github-shirou-gopsutil (4.25.2-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Switch to Standards-Version 4.7.2 (no changes needed).
+
+ -- Guillem Jover <gjover@sipwise.com>  Fri, 14 Mar 2025 18:24:24 +0100
+
+golang-github-shirou-gopsutil (4.25.1-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Override lintian tag on testdata being documentation.
+  * Use pypi link instead of dead pythonhosted URL in packages description.
+  * Improve and fix package description and its grammar.
+
+ -- Guillem Jover <gjover@sipwise.com>  Tue, 04 Feb 2025 15:40:09 +0100
+
+golang-github-shirou-gopsutil (4.24.12-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Update copyright years.
+
+ -- Guillem Jover <gjover@sipwise.com>  Mon, 03 Feb 2025 19:18:04 +0100
+
+golang-github-shirou-gopsutil (4.24.9-2) unstable; urgency=medium
+
+  * Update patch metadata.
+  * Skip test for nice(2) which fails on reproducible nodes.
+  * Add Breaks on golang-github-minio-madmin-go (<< 3.0.63-2~) to help
+    migration.
+
+ -- Guillem Jover <gjover@sipwise.com>  Tue, 08 Oct 2024 14:41:28 +0200
+
+golang-github-shirou-gopsutil (4.24.9-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Refresh patch for gbp pq format.
+  * Skip tests if no swap or other partitions are found.
+  * Skip tests if no CPU model information is found.
+  * Gather /proc/cpuinfo information from CI, VM and build environments.
+    This will make it possible to update the code for these systems, so that
+    we can then potentially stop skipping the tests.
+
+ -- Guillem Jover <gjover@sipwise.com>  Mon, 07 Oct 2024 16:22:10 +0200
+
+golang-github-shirou-gopsutil (4.24.8-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Update gbp configuration following Go Team new workflow.
+  * Wrap and sort -ast.
+  * Switch to dh-sequence-golang from dh-golang and --with=golang.
+  * Set build directory to _build.
+  * Switch to Standards-Version 4.7.0 (no changes needed).
+  * Add myself to Uploaders.
+  * Add a debian/.gitignore file.
+  * Update patches to fix test suite failures.
+  * Only require test tools when not in nocheck build-profile.
+  * Add python3 and python3-psutil to Build-Depends for optional tests.
+  * Update copyright years.
+
+ -- Guillem Jover <gjover@sipwise.com>  Wed, 18 Sep 2024 20:17:38 +0200
+
 golang-github-shirou-gopsutil (3.24.1-1) unstable; urgency=medium
 
   * Team upload

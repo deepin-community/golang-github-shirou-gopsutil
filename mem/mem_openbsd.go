@@ -1,5 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause
 //go:build openbsd
-// +build openbsd
 
 package mem
 
@@ -10,8 +10,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/shirou/gopsutil/v3/internal/common"
 	"golang.org/x/sys/unix"
+
+	"github.com/shirou/gopsutil/v4/internal/common"
 )
 
 func GetPageSize() (uint64, error) {

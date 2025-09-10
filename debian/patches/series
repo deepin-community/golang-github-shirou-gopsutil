@@ -1,1 +1,4 @@
-01-Disable_failing_tests.patch
+Skip-missing-utmp.patch
+0002-Skip-tests-if-no-swap-or-other-partitions-are-found.patch
+0003-Skip-the-CPU-test-if-no-model-information-is-found.patch
+0004-Skip-test-for-nice-2-which-fails-on-reproducible-nod.patch

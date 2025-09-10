@@ -1,5 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause
 //go:build netbsd
-// +build netbsd
 
 package disk
 
@@ -7,8 +7,9 @@ import (
 	"context"
 	"unsafe"
 
-	"github.com/shirou/gopsutil/v3/internal/common"
 	"golang.org/x/sys/unix"
+
+	"github.com/shirou/gopsutil/v4/internal/common"
 )
 
 const (
@@ -45,7 +46,7 @@ func PartitionsWithContext(ctx context.Context, all bool) ([]PartitionStat, erro
 	bufSize := sizeOfStatvfs * mountedFsCount
 	buf := make([]Statvfs, mountedFsCount)
 
-	// request agian to get desired mount data
+	// request again to get desired mount data
 	_, _, err = unix.Syscall(
 		483, // SYS___getvfsstat90 syscall
 		uintptr(unsafe.Pointer(&buf[0])),

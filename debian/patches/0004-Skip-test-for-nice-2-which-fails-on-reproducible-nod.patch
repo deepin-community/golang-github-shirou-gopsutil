@@ -1,0 +1,26 @@
+From: Guillem Jover <gjover@sipwise.com>
+Date: Tue, 8 Oct 2024 14:32:38 +0200
+Subject: Skip test for nice(2) which fails on reproducible nodes
+
+The system has a setup where nice(2) is not taking effect and the test
+fails. Skip it for now.
+
+Origin: vendor, Sipwise
+Forwarded: no
+---
+ process/process_test.go | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/process/process_test.go b/process/process_test.go
+index abc3dbd..462c752 100644
+--- a/process/process_test.go
++++ b/process/process_test.go
+@@ -229,7 +229,7 @@ func TestNice(t *testing.T) {
+ 	p := testGetProcess()
+ 
+ 	// https://github.com/shirou/gopsutil/issues/1532
+-	if os.Getenv("CI") == "true" && runtime.GOOS == "darwin" {
++	if os.Getenv("CI") == "true" {
+ 		t.Skip("Skip CI")
+ 	}
+ 

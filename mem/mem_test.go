@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSD-3-Clause
 package mem
 
 import (
@@ -8,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/shirou/gopsutil/v3/internal/common"
+	"github.com/shirou/gopsutil/v4/internal/common"
 )
 
 func skipIfNotImplementedErr(t *testing.T, err error) {
@@ -17,7 +18,7 @@ func skipIfNotImplementedErr(t *testing.T, err error) {
 	}
 }
 
-func TestVirtual_memory(t *testing.T) {
+func TestVirtualMemory(t *testing.T) {
 	if runtime.GOOS == "solaris" || runtime.GOOS == "illumos" {
 		t.Skip("Only .Total .Available are supported on Solaris/illumos")
 	}
@@ -33,9 +34,9 @@ func TestVirtual_memory(t *testing.T) {
 	}
 	t.Log(v)
 
-	assert.True(t, v.Total > 0)
-	assert.True(t, v.Available > 0)
-	assert.True(t, v.Used > 0)
+	assert.Positive(t, v.Total)
+	assert.Positive(t, v.Available)
+	assert.Positive(t, v.Used)
 
 	total := v.Used + v.Free + v.Buffers + v.Cached
 	totalStr := "used + free + buffers + cached"
@@ -66,7 +67,7 @@ func TestVirtual_memory(t *testing.T) {
 		"UsedPercent should be how many percent of Total is Used: %v", v)
 }
 
-func TestSwap_memory(t *testing.T) {
+func TestSwapMemory(t *testing.T) {
 	v, err := SwapMemory()
 	skipIfNotImplementedErr(t, err)
 	if err != nil {
